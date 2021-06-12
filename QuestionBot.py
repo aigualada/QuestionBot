@@ -48,7 +48,7 @@ def start_scheduler(update: Update, context: CallbackContext) -> None:
         context.job_queue.run_daily(send_daily_question, datetime.time(hour=Hour, minute=Minutes, tzinfo=pytz.timezone(TimeZone)),
                                 days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name=str(chat_id))
 
-        update.message.reply_text('Question scheduler succesfully set. Bot sends daily question at %d:%d' % (Hour, Minutes)) 
+        update.message.reply_text('Question scheduler succesfully set. Bot sends daily question at %d:%d (%s)'  % (Hour, Minutes, TimeZone)) 
 
     except(IndexError, ValueError):
         update.message.reply_text("Usage: /set_scheduler <hour> <minutes> <timezone>")
