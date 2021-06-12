@@ -41,22 +41,20 @@ def start_scheduler(update: Update, context: CallbackContext) -> None:
     job_removed = remove_job_if_exists(str(chat_id), context)
 
     try:
+        Hour = int(context.args[0])
+        Minutes = int(context.args[1])
+        TimeZone = context.args[2]
 
-        Hour = int(context.args[0]);
-        Minutes = int(context.args[1]);
-
-        context.job_queue.run_daily(send_daily_question, datetime.time(hour=Hour, minute=Minutes, tzinfo=pytz.timezone('Europe/Madrid')),
+        context.job_queue.run_daily(send_daily_question, datetime.time(hour=Hour, minute=Minutes, tzinfo=pytz.timezone(TimeZone)),
                                 days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name=str(chat_id))
 
         update.message.reply_text('Question scheduler succesfully set. Bot sends daily question at %d:%d' % (Hour, Minutes)) 
 
     except(IndexError, ValueError):
-        update.message.reply_text("Usage: /set_scheduler <hour> <minutes>")
+        update.message.reply_text("Usage: /set_scheduler <hour> <minutes> <timezone>")
+        update.message.reply_text("Example: /set_scheduler 10 0 Europe/Madrid")
 
 
-
-    
-    
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
     """Remove job with given name. Returns whether job was removed."""
 
