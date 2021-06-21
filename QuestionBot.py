@@ -11,6 +11,14 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 QuestionsFile = "WeekQuestions.txt"
+ReminderTextFile = "ReminderText.txt"
+
+
+def get_reminder_text():
+    reminder_text_file = open(ReminderTextFile)
+
+    return reminder_text_file.read()
+
 
 def get_day_question(day=0):
     """Returns the question for specific week day (0:monday, 1:tuesday...)."""
@@ -32,10 +40,22 @@ def send_daily_question(context: CallbackContext) -> None:
 
     context.bot.send_message(job.context, text=DayQuestion)
 
+def send_question_reminder(context: CallbackContext) -> None:
+    """Sends daily reminder to the day question"""
+    
+    job = context.job
+
+    ReminderText = get_reminder_text()
+
+    NumWeekDay = datetime.datetime.today().weekday()
+    DayQuestion = get_day_question(NumWeekDay)
+    
+    context.bot.send_message(job.context, text=ReminderText + "\n" + DayQuestion)
+
 
 
 def start_scheduler(update: Update, context: CallbackContext) -> None:
-
+    
     chat_id = update.message.chat_id
     update.message.reply_text("Setting daily question scheduler!.")
     job_removed = remove_job_if_exists(str(chat_id), context)
@@ -43,16 +63,21 @@ def start_scheduler(update: Update, context: CallbackContext) -> None:
     try:
         Hour = int(context.args[0])
         Minutes = int(context.args[1])
-        TimeZone = context.args[2]
+        HoursReminder = int(context.args[2])
+        TimeZone = context.args[3]
+        
+        context.job_queue.run_daily(send_daily_question, datetime.time(hour=Hour, minute=Minutes, tzinfo=pytz.timezone(TimeZone)), 
+                                    days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name=str(chat_id))
 
-        context.job_queue.run_daily(send_daily_question, datetime.time(hour=Hour, minute=Minutes, tzinfo=pytz.timezone(TimeZone)),
-                                days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name=str(chat_id))
+        context.job_queue.run_daily(send_question_reminder, datetime.time(hour=Hour + HoursReminder, minute=Minutes, tzinfo=pytz.timezone(TimeZone)), 
+                                    days=(0, 1, 2, 3, 4, 5, 6), context=chat_id, name=str(chat_id))
 
-        update.message.reply_text('Question scheduler succesfully set. Bot sends daily question at %d:%d (%s)'  % (Hour, Minutes, TimeZone)) 
+        update.message.reply_text('Question scheduler succesfully set. Bot sends daily question at %d:%d (%s) and the question reminder at %d:%d (%s) '  
+                                    % (Hour, Minutes, TimeZone, Hour + HoursReminder, Minutes, TimeZone)) 
 
     except(IndexError, ValueError):
-        update.message.reply_text("Usage: /set_scheduler <hour> <minutes> <timezone>")
-        update.message.reply_text("Example: /set_scheduler 10 0 Europe/Madrid")
+        update.message.reply_text("Usage: /set_scheduler <hour> <minutes> <hours_reminder> <timezone> ")
+        update.message.reply_text("Example: /set_scheduler 10 30 4 Europe/Madrid\nThe scheduler sends question daily at 10:30 in timezone Europe/Madrid and question reminder 4 hours later at 14:30")
 
 
 def remove_job_if_exists(name: str, context: CallbackContext) -> bool:
@@ -78,7 +103,6 @@ def main() -> None:
     updater.start_polling()
 
     updater.idle()
-
 
 
 if __name__ == '__main__':
