@@ -1,7 +1,7 @@
 import logging
 import datetime
 import pytz
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, Filters
 from telegram import Update
 
 logging.basicConfig(
@@ -12,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 QuestionsFile = "WeekQuestions.txt"
 ReminderTextFile = "ReminderText.txt"
+
+LIST_ADMINS = []
 
 
 def get_reminder_text():
@@ -98,7 +100,7 @@ def main() -> None:
     
     dispatcher = updater.dispatcher
 
-    dispatcher.add_handler(CommandHandler("set_scheduler", start_scheduler))
+    dispatcher.add_handler(CommandHandler("set_scheduler", start_scheduler, Filters.user(username=LIST_ADMINS)))
     
     updater.start_polling()
 
